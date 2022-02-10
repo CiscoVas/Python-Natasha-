@@ -44,3 +44,8 @@ london_co = {
         "routing": True,
     },
 }
+
+device_name = input("Input network device name: ")
+attr_name = input("Input attribute name: ")
+
+print(london_co.setdefault(device_name)[attr_name])

@@ -49,3 +49,11 @@ london_co = {
         "routing": True,
     },
 }
+
+device_name = input("Input network device name: ")
+dict_keys = list(london_co.setdefault(device_name).keys())
+
+attr_name = input("Chose attribute name from " 
+    + str(london_co.setdefault(device_name).keys()).replace("'", "").replace("[", "").replace("]", ""))
+
+print(london_co.setdefault(device_name).setdefault(attr_name, "Такого параметра нет!"))

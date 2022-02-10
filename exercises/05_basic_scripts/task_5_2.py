@@ -30,3 +30,37 @@ Out[1]: '11111111111111111111111111110000'
 
 Ограничение: Все задания надо выполнять используя только пройденные темы.
 """
+long_addr = input("Input IP-address in format ip_addr/mask: ")
+
+ip_addr = long_addr.split("/")[0]
+netmask = int(long_addr.split("/")[1])
+
+ip_addr.split(".")
+oct1 = int(ip_addr.split(".")[0])
+oct2 = int(ip_addr.split(".")[1])
+oct3 = int(ip_addr.split(".")[2])
+oct4 = int(ip_addr.split(".")[3])
+
+ip_output = (
+  "\n" + "Network:" 
+  + "\n" + "{:<8}  " * 4 
+  + "\n" + "{:08b}  " * 4
+  )
+print(ip_output.format(oct1, oct2, oct3, oct4, oct1, oct2, oct3, oct4))
+
+bit_mask = "1" * netmask + "0" * (32 - netmask)
+m_oct1 = bit_mask[0:8]
+m_oct2 = bit_mask[8:16]
+m_oct3 = bit_mask[16:24]
+m_oct4 = bit_mask[24:32]
+
+net_output = (
+  "\n" + "Mask:" 
+  + "\n" + "/" + str(netmask)
+  + "\n" + "{:<8}  " * 4 
+  + "\n" + "{:<8}  " * 4 
+  + "\n"
+  )
+
+print(net_output.format(int(m_oct1, 2), int(m_oct2, 2), int(m_oct3, 2), int(m_oct4, 2), 
+                        m_oct1, m_oct2, m_oct3, m_oct4))

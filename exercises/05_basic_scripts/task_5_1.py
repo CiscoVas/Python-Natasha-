@@ -46,3 +46,6 @@ london_co = {
         "routing": True,
     },
 }
+
+r_name = input("Input router name: ")
+print(london_co.setdefault(r_name))

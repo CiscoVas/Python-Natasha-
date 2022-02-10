@@ -25,16 +25,8 @@ Mask:
 255       255       255       0
 11111111  11111111  11111111  00000000
 
-
 Проверить работу скрипта на разных комбинациях хост/маска, например:
     10.0.5.195/28, 10.0.1.1/24
-
-Вывод сети и маски должен быть упорядочен также, как в примере:
-- столбцами
-- ширина столбца 10 символов (в двоичном формате
-  надо добавить два пробела между столбцами
-  для разделения октетов между собой)
-
 
 Подсказка:
 Есть адрес хоста в двоичном формате и маска сети 28. Адрес сети это первые 28 бит
@@ -50,47 +42,47 @@ bin_ip = "00001010000000010000000111000011"
 
 """
 
-long_addr = input("Input IP-address in format ip_addr/mask: ")
-#long_addr = "10.1.1.1/24"
+network = input("Введите адрес сети: ")
 
-ip_addr = long_addr.split("/")[0]
-netmask = int(long_addr.split("/")[1])
+ip, mask = network.split("/")
+ip_list = ip.split(".")
+mask = int(mask)
 
-ip_addr.split(".")
-oct1 = int(ip_addr.split(".")[0])
-oct2 = int(ip_addr.split(".")[1])
-oct3 = int(ip_addr.split(".")[2])
-oct4 = int(ip_addr.split(".")[3])
+oct1, oct2, oct3, oct4 = [
+    int(ip_list[0]),
+    int(ip_list[1]),
+    int(ip_list[2]),
+    int(ip_list[3]),
+]
+bin_ip_str = "{:08b}{:08b}{:08b}{:08b}".format(oct1, oct2, oct3, oct4)
+bin_network_str = bin_ip_str[:mask] + "0" * (32 - mask)
 
-bin_ip = ("{:08b}{:08b}{:08b}{:08b}").format(oct1, oct2, oct3, oct4)
-net_ip = bin_ip[:netmask] + bin_ip[netmask:].replace("1", "0")
+net1, net2, net3, net4 = [
+    int(bin_network_str[0:8], 2),
+    int(bin_network_str[8:16], 2),
+    int(bin_network_str[16:24], 2),
+    int(bin_network_str[24:32], 2),
+]
 
-b_oct1 = int(net_ip[0:8], 2)
-b_oct2 = int(net_ip[8:16], 2)
-b_oct3 = int(net_ip[16:24], 2)
-b_oct4 = int(net_ip[24:32], 2)
+bin_mask = "1" * mask + "0" * (32 - mask)
+m1, m2, m3, m4 = [
+    int(bin_mask[0:8], 2),
+    int(bin_mask[8:16], 2),
+    int(bin_mask[16:24], 2),
+    int(bin_mask[24:32], 2),
+]
 
+ip_output = """
+Network:
+{0:<8}  {1:<8}  {2:<8}  {3:<8}
+{0:08b}  {1:08b}  {2:08b}  {3:08b}"""
 
-ip_output = (
-  "\n" + "Network:" 
-  + "\n" + "{:<8}  "   * 4 
-  + "\n" + "{:>08b}  " * 4
-  )
-print(ip_output.format(b_oct1, b_oct2, b_oct3, b_oct4, b_oct1, b_oct2, b_oct3, b_oct4))
+mask_output = """
+Mask:
+/{0}
+{1:<8}  {2:<8}  {3:<8}  {4:<8}
+{1:08b}  {2:08b}  {3:08b}  {4:08b}
+"""
 
-bit_mask = "1" * netmask + "0" * (32 - netmask)
-m_oct1 = bit_mask[0:8]
-m_oct2 = bit_mask[8:16]
-m_oct3 = bit_mask[16:24]
-m_oct4 = bit_mask[24:32]
-
-net_output = (
-  "\n" + "Mask:" 
-  + "\n" + "/" + str(netmask)
-  + "\n" + "{:<8}  " * 4 
-  + "\n" + "{:<8}  " * 4 
-  + "\n"
-  )
-
-print(net_output.format(int(m_oct1, 2), int(m_oct2, 2), int(m_oct3, 2), int(m_oct4, 2), 
-                        m_oct1, m_oct2, m_oct3, m_oct4))
+print(ip_output.format(net1, net2, net3, net4))
+print(mask_output.format(mask, m1, m2, m3, m4))

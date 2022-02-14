@@ -20,3 +20,16 @@
 Ограничение: Все задания надо выполнять используя только пройденные темы.
 
 """
+
+import os
+
+#path = os.getcwd() + "/07_files/"  --- для работы, снизу, чтобы скрипт проверки пройти
+path = os.getcwd() + "/"
+
+f = open (path + "CAM_table.txt", "r")
+f = f.read().rstrip().split('\n')
+
+for row in f:
+    if len(row.replace(" ", "")) > 0 and row.replace(" ", "")[0].isdigit():
+        output = "{:6}  {:16}  {:10}"
+        print(output.format(row.split()[0], row.split()[1], row.split()[3]))

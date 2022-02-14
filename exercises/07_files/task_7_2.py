@@ -39,3 +39,20 @@ interface Ethernet0/3
 ...
 
 """
+
+from sys import argv
+import os
+
+arg1 = argv[1]
+#arg1 = "config_sw1.txt"
+#path = os.getcwd() + "/07_files/"  --- для работы, снизу, чтобы скрипт проверки пройти
+path = os.getcwd() + "/"
+
+f = open ((path + arg1), "r")
+f = f.read().rstrip().split('\n')
+
+for row in f:
+    if row.replace(" ", "") == "" or row.replace(" ", "")[0] == "!":
+        pass
+    else:
+        print(row)

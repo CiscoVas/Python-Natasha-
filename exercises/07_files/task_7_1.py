@@ -14,3 +14,14 @@ Outbound Interface    FastEthernet0/0
 Ограничение: Все задания надо выполнять используя только пройденные темы.
 
 """
+
+import os
+
+#path = os.getcwd() + "/07_files/"  --- для работы, снизу, чтобы скрипт проверки пройти
+path = os.getcwd() + "/"
+f = open ((path + "ospf.txt"), "r")
+
+for row in f.readlines():
+    l = row.split()
+    output = ("\nPrefix                {}\nAD/Metric             {}\nNext-Hop              {}\nLast update           {}\nOutbound Interface    {}")
+    print(output.format(l[1], l[2].replace("[", "").replace("]", ""), l[4].replace(",", ""), l[5].replace(",", ""), l[6]))

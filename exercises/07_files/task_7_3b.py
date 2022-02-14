@@ -17,3 +17,20 @@ Enter VLAN number: 10
 Ограничение: Все задания надо выполнять используя только пройденные темы.
 
 """
+
+import os
+
+#path = os.getcwd() + "/07_files/"  --- для работы, снизу, чтобы скрипт проверки пройти
+path = os.getcwd() + "/"
+
+f = open (path + "CAM_table.txt", "r")
+f = f.read().rstrip().split('\n')
+sorted_list = []
+
+vlan_num = input("Enter VLAN number: ")
+output = "{:6}  {:16}  {:10}"
+
+for row in f:
+    if len(row.replace(" ", "")) > 0 and row.replace(" ", "")[0].isdigit():
+        if row.split()[0] == vlan_num:            
+            print(output.format(row.split()[0], row.split()[1], row.split()[3]))

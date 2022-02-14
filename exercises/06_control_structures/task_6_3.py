@@ -82,3 +82,24 @@ trunk = {
 #         else:
 #             print(f" {command}")
 
+# Пример значения и соответствующей команды:
+# * ['add', '10', '20'] - команда switchport trunk allowed vlan add 10,20
+# * ['del', '17'] - команда switchport trunk allowed vlan remove 17
+# * ['only', '11', '30'] - команда switchport trunk allowed vlan 11,30
+
+for intf, vlan in trunk.items():
+    print("interface FastEthernet" + intf)
+
+    for command in trunk_template:
+        if command == "switchport trunk allowed vlan":
+            cmd_vlan = vlan[0]
+            vlan.pop(0)
+            vlans_str = ",".join(vlan)
+            if cmd_vlan == "only":
+                print (f' {command} {vlans_str}')
+            elif cmd_vlan == "del":
+                print (f' {command} remove {vlans_str}')
+            else:
+                print (f' {command} {cmd_vlan} {vlans_str}')
+        else:
+            print(f' {command}')

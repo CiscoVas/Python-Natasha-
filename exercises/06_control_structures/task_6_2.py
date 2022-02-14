@@ -12,3 +12,16 @@
 
 Ограничение: Все задания надо выполнять используя только пройденные темы.
 """
+
+ip_addr = input("Input IP-address like '10.1.1.1': ")
+oct1 = int(ip_addr.split(".")[0])
+
+if ip_addr == "255.255.255.255":
+   print("local broadcast")
+elif ip_addr == "0.0.0.0":
+   print("unassigned")
+elif oct1 > 0 and oct1 < 224:
+   print("unicast")
+elif oct1 > 223 and oct1 < 240:
+   print("multicast")
+else: print("unused")

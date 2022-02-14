@@ -19,21 +19,19 @@
 ignore = ["duplex", "alias", "configuration"]
 
 from sys import argv
-import os
 
-arg1 = argv[1]
-#arg1 = "config_sw1.txt"
-#path = os.getcwd() + "/07_files/"  --- для работы, снизу, чтобы скрипт проверки пройти
-path = os.getcwd() + "/"
+in_path = str(argv[1])
+add_path = ""
 
-f = open ((path + arg1), "r")
-f = f.read().rstrip().split('\n')
+#add_path = "07_files/"   --- не работает без этого
+#in_path = "config_sw1.txt"
 
-for row in f:
-    if row.replace(" ", "") == "" or row.replace(" ", "")[0] == "!":
-        pass
-    else:
-        if ((ignore[0] not in row) 
-                and ignore[1] not in row
-                and ignore[2] not in row):
-            print(row)
+with open(add_path + in_path) as f:
+    for row in f:
+        if row.replace(" ", "")[0] == "" or row.replace(" ", "")[0] == "!":
+            pass
+        else:
+            if ((ignore[0] not in row) 
+                    and ignore[1] not in row
+                    and ignore[2] not in row):
+                print(row.replace("\n", ""))

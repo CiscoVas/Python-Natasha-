@@ -36,6 +36,19 @@
 """
 
 
+def generate_trunk_config(intf_vlan_mapping, trunk_template):
+    result_d = {}
+    for key in intf_vlan_mapping.keys():
+        result_d[key] = []
+        for item in trunk_template:
+            if item in "switchport trunk allowed vlan":
+                vlans = [str(vlan) for vlan in intf_vlan_mapping[key]]
+                result_d[key].append(item + " " + ",".join(vlans))
+            else:
+                result_d[key].append(item)
+    return result_d
+
+
 trunk_mode_template = [
     "switchport mode trunk",
     "switchport trunk native vlan 999",

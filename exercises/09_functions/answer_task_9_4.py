@@ -45,8 +45,6 @@
 Ограничение: Все задания надо выполнять используя только пройденные темы.
 """
 
-import os
-
 ignore = ["duplex", "alias", "configuration"]
 
 
@@ -69,20 +67,15 @@ def ignore_command(command, ignore):
 
 
 def convert_config_to_dict(config_filename):
-    cfg_d = {}
-    key_name = ""
-    with (open(str(path) + str(config_filename), "r")) as f:
-        for cmd in f:
-            if cmd[0] == "!" or ignore_command(cmd, ignore) or cmd.rstrip() == "":
-                pass
-            else:
-                if cmd[0] != " ":
-                    key_name = cmd.strip()
-                    cfg_d[key_name] = []
+    config_dict = {}
+    with open(config_filename) as f:
+        for line in f:
+            line = line.rstrip()
+            if line and not (line.startswith("!") or ignore_command(line, ignore)):
+                if line[0].isalnum():
+                    section = line
+                    config_dict[section] = []
                 else:
-                    cfg_d[key_name].append(cmd.strip())
-    return cfg_d
+                    config_dict[section].append(line.strip())
+    return config_dict
 
-add_path = "/"
-#add_path = "/09_functions/"
-path = os.getcwd() + add_path

@@ -28,24 +28,6 @@ print(generate_access_config(access_config, access_mode_template, port_security_
 
 """
 
-def generate_access_config(intf_vlan_mapping, access_template, psecurity = None):
-    cmd_list = []
-    for key in intf_vlan_mapping.keys():
-        cmd_list.append("interface {}".format(key))
-
-        for item in access_template:
-            if item in "switchport access vlan":
-                cmd_list.append(item + " " + str(intf_vlan_mapping[key]))
-            else:
-                cmd_list.append(item)
-    
-        if psecurity != None:
-            for cmd in psecurity:
-                cmd_list.append(cmd)
-
-    return cmd_list
-
-
 access_mode_template = [
     "switchport mode access",
     "switchport access vlan",
@@ -62,6 +44,16 @@ port_security_template = [
 
 access_config = {"FastEthernet0/12": 10, "FastEthernet0/14": 11, "FastEthernet0/16": 17}
 
+def generate_access_config(intf_vlan_mapping, access_template, psecurity=None):
+    access_config = []
 
-print(generate_access_config(access_config, access_mode_template))
-print(generate_access_config(access_config, access_mode_template, port_security_template))
+    for intf, vlan in intf_vlan_mapping.items():
+        access_config.append(f"interface {intf}")
+        for command in access_template:
+            if command.endswith("access vlan"):
+                access_config.append(f"{command} {vlan}")
+            else:
+                access_config.append(command)
+        if psecurity:
+            access_config.extend(psecurity)
+    return access_config

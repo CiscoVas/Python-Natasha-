@@ -81,38 +81,20 @@ infiles = [
     "sh_cdp_n_r3.txt",
 ]
 
-import os
-import task_11_2 as network_map
-from draw_network_graph import draw_topology
-from pprint import pprint
-
 
 def unique_network_map(topology_dict):
-    '''
-    Will delete all "duplicated" items from topology_dict and return result dicrionary with unique items
-    '''
-    result_d = {}
-    for key, val in topology_dict.items():
-        if val == "": 
-            continue
-
-        for second_key, second_val in topology_dict.items():
-            if key == second_val and val == second_key:
-                topology_dict[second_key] = ""
-                #print('"Duplicate" item detected!')
-        
-        result_d[key] = val
-        
-    return result_d
+    network_map = {}
+    for key, value in topology_dict.items():
+        if not network_map.get(value) == key:
+            network_map[key] = value
+    return network_map
 
 
-if __name__ == "__main__":
-    add_path = "/"
-    #add_path = "/11_modules/"
-    path = os.getcwd() + add_path
+# второй вариант решения
+def unique_network_map(topology_dict):
+    network_map = {}
+    for key, value in topology_dict.items():
+        key, value = sorted([key, value])
+        network_map[key] = value
+    return network_map
 
-    #pprint(network_map.create_network_map(infiles))
-    #print("---" * 30)
-    #pprint(unique_network_map(network_map.create_network_map(infiles)))
-
-    draw_topology(unique_network_map(network_map.create_network_map(infiles)), output_filename = path + "img/topology")

@@ -34,7 +34,6 @@ R6           Fa 0/2          143           R S I           2811       Fa 0/0
 Ограничение: Все задания надо выполнять используя только пройденные темы.
 """
 
-import os
 
 def parse_cdp_neighbors(command_output):
     """
@@ -44,31 +43,19 @@ def parse_cdp_neighbors(command_output):
     и с файлами и с выводом с оборудования.
     Плюс учимся работать с таким выводом.
     """
-    main_dev = ""
-    start_parse = False
-    result_d = {}
-
-    for cmd_line in command_output.split("\n"):
-        if "show cdp neighbors" in cmd_line:
-            if ">" in cmd_line:
-                main_dev = cmd_line.split(">")[0]
-            elif  "#" in cmd_line:
-                main_dev = cmd_line.split("#")[0]
-        
-        if start_parse and cmd_line.strip() != "":
-            remote_dev, local_intf_name, local_intf_id, *other, remote_intf_name, remote_intf_id = cmd_line.split()
-            result_d[tuple([main_dev, local_intf_name + local_intf_id])] = tuple([remote_dev, remote_intf_name + remote_intf_id])
-
-        if "Device ID" in cmd_line:
-            start_parse = True
-    
-    return result_d
+    result = {}
+    for line in command_output.split("\n"):
+        line = line.strip()
+        columns = line.split()
+        if ">" in line:
+            hostname = line.split(">")[0]
+        # 3 индекс это столбец holdtime - там всегда число
+        elif len(columns) >= 5 and columns[3].isdigit():
+            r_host, l_int, l_int_num, *other, r_int, r_int_num = columns
+            result[(hostname, l_int + l_int_num)] = (r_host, r_int + r_int_num)
+    return result
 
 
 if __name__ == "__main__":
-    add_path = "/"
-    #add_path = "/11_modules/"
-    path = os.getcwd() + add_path
-
-    with open(path + "sh_cdp_n_sw1.txt") as f:
+    with open("sh_cdp_n_sw1.txt") as f:
         print(parse_cdp_neighbors(f.read()))

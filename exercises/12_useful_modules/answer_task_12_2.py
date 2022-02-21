@@ -34,36 +34,20 @@
  '172.21.41.129', '172.21.41.130', '172.21.41.131', '172.21.41.132']
 
 """
-
 import ipaddress
 
 
-def get_long_ip(ip1, oct4):
-    oct1, oct2, oct3, _ = ip1.split(".")
-    return ".".join([oct1, oct2, oct3, oct4])
-
-def get_ip_list_from_two_ip(line):
-    result = []
-    item1, item2 = line.split("-")
-    
-    if not "." in item2:
-        item2 = get_long_ip(item1, item2)
-
-    while ipaddress.IPv4Address(item2) >= ipaddress.IPv4Address(item1):
-        result.append(item1)
-        item1 = str(ipaddress.IPv4Address(item1) + 1)
-
-    return result
-
-def convert_ranges_to_ip_list(ranges_list):
-    result = []
-    for item in ranges_list:
-        if "-" in item:
-            result.extend(get_ip_list_from_two_ip(item))
+def convert_ranges_to_ip_list(ip_addresses):
+    ip_list = []
+    for ip_address in ip_addresses:
+        if "-" in ip_address:
+            start_ip, stop_ip = ip_address.split("-")
+            if "." not in stop_ip:
+                stop_ip = ".".join(start_ip.split(".")[:-1] + [stop_ip])
+            start_ip = ipaddress.ip_address(start_ip)
+            stop_ip = ipaddress.ip_address(stop_ip)
+            for ip in range(int(start_ip), int(stop_ip) + 1):
+                ip_list.append(str(ipaddress.ip_address(ip)))
         else:
-            result.append(item)
-    return result
-
-
-if __name__ == "__main__":
-    print(convert_ranges_to_ip_list(['8.8.4.4', '1.1.1.1-3', '172.21.41.128-172.21.41.132']))
+            ip_list.append(str(ip_address))
+    return ip_list

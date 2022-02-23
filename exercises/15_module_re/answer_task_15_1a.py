@@ -24,43 +24,16 @@
 а не ввод пользователя.
 
 """
-
-import os
 import re
 
-def get_ip_from_cfg(file_name):
-    ''''
-    Функция должна обрабатывать конфигурацию и возвращать IP-адреса и маски,
-    которые настроены на интерфейсах, в виде списка кортежей:
-    * первый элемент кортежа - IP-адрес
-    * второй элемент кортежа - маска
-    {'FastEthernet0/1': ('10.0.1.1', '255.255.255.0'),
+def get_ip_from_cfg(config):
+    with open(config) as f:
+        regex = re.compile(
+            r"interface (?P<intf>\S+)\n"
+            r"( .*\n)*"
+            r" ip address (?P<ip>\S+) (?P<mask>\S+)"
+        )
+        match = regex.finditer(f.read())
 
-    interface Ethernet0/0
-    description To PE_r3 Ethernet0/0
-    bandwidth 100000
-    ip address 10.0.13.1 255.255.255.0
-    '''
-    result = {}
-    with open (file_name) as f:
-        r_intf = re.compile(r'^[i|I]nterface (\S+)')
-        r_ip   = re.compile(r'ip address ((?:\d+\.){3}\d+) ((?:\d+\.){3}\d+)')
-
-        intf = ""
-        for line in f:
-            m_intf = r_intf.search(line)
-            if m_intf:
-                intf = m_intf.group(1)
-                continue
-            m_ip = r_ip.search(line)
-            if m_ip:
-              result[intf] = m_ip.group(1, 2)
-
+    result = {m.group("intf"): m.group("ip", "mask") for m in match}
     return result
-
-
-if __name__ == "__main__":
-    #add_path = "/"
-    add_path = "/15_module_re/"
-    path = os.getcwd() + add_path
-    print(get_ip_from_cfg(path + "config_r1.txt"))

@@ -11,7 +11,7 @@ interface Ethernet0/1
  ip address 10.254.2.2 255.255.255.0 secondary
 
 А в словаре, который возвращает функция get_ip_from_cfg, интерфейсу Ethernet0/1
-соответствует только один из них.
+соответствует только один из них (второй).
 
 Скопировать функцию get_ip_from_cfg из задания 15.1a и переделать ее таким
 образом, чтобы в значении словаря она возвращала список кортежей
@@ -28,45 +28,40 @@ IP-адреса, диапазоны адресов и так далее, так 
 а не ввод пользователя.
 
 """
-
-import os
 import re
 
-def get_ip_from_cfg(file_name):
-    ''''
-    Функция должна обрабатывать конфигурацию и возвращать IP-адреса и маски,
-    которые настроены на интерфейсах, в виде списка кортежей:
-    * первый элемент кортежа - IP-адрес
-    * второй элемент кортежа - маска
-    {'FastEthernet0/1': ('10.0.1.1', '255.255.255.0'),
 
-    interface Ethernet0/0
-    description To PE_r3 Ethernet0/0
-    bandwidth 100000
-    ip address 10.0.13.1 255.255.255.0
-    '''
+def get_ip_from_cfg(filename):
     result = {}
-    with open (file_name) as f:
-        regex = re.compile(
-            r'interface (?P<intf>\S+)\n'
-            r'( .*\n)*'
-            r' ip address +(?P<ip>\S+) +(?P<mask>\S+)\n'
-            r'( ip address +(?P<sec_ip>\S+) +(?P<sec_mask>\S+) secondary)*'
-        )
+    regex = (r"^interface (?P<intf>\S+)"
+             r"|address (?P<ip>\S+) (?P<mask>\S+)")
 
-        match = regex.finditer(f.read())
-        
-        for m in match:
-            if m.group("sec_ip"):
-                result[m.group("intf")] = [m.group("ip", "mask"), m.group("sec_ip", "sec_mask")]
-            else:
-                result[m.group("intf")] = [m.group("ip", "mask")]
-
+    with open(filename) as f:
+        for line in f:
+            match = re.search(regex, line)
+            if match:
+                if match.lastgroup == "intf":
+                    intf = match.group(match.lastgroup)
+                elif match.lastgroup == "mask":
+                    result.setdefault(intf, [])
+                    result[intf].append(match.group("ip", "mask"))
     return result
 
 
-if __name__ == "__main__":
-    #add_path = "/"
-    add_path = "/15_module_re/"
-    path = os.getcwd() + add_path
-    print(get_ip_from_cfg(path + "config_r2.txt"))
+# еще один вариант решения
+
+def get_ip_from_cfg(filename):
+    result = {}
+    with open(filename) as f:
+        # сначала отбираем нужные куски конфигурации
+        match = re.finditer(
+            "interface (\S+)\n"
+            "(?: .*\n)*"
+            " ip address \S+ \S+\n"
+            "( ip address \S+ \S+ secondary\n)*",
+            f.read(),
+        )
+        # потом в этих частях находим все IP-адреса
+        for m in match:
+            result[m.group(1)] = re.findall("ip address (\S+) (\S+)", m.group())
+    return result

@@ -43,3 +43,48 @@
 > pip install graphviz
 
 """
+import os
+import yaml
+import graphviz
+from draw_network_graph import draw_topology
+
+
+def unique_network_map(topology_dict):
+    '''
+    Will delete all "duplicated" items from topology_dict and return result dicrionary with unique items
+    '''
+    result_d = {}
+    for key, val in topology_dict.items():
+        if val == "": 
+            continue
+
+        for second_key, second_val in topology_dict.items():
+            if key == second_val and val == second_key:
+                topology_dict[second_key] = ""
+                #print('"Duplicate" item detected!')
+        
+        result_d[key] = val
+        
+    return result_d
+
+
+def transform_topology(yaml_f_name):
+    with open(yaml_f_name) as f_in:
+        d = yaml.safe_load(f_in)
+        norm_dict = {}
+
+        for key in d.keys():
+            for second_key in d[key].keys():
+                for item in d[key][second_key].items():
+                    norm_dict[(key, second_key)] = item 
+        result_dict = unique_network_map(norm_dict)
+    return result_dict
+
+
+if __name__ == "__main__":
+    add_path = "/"
+    add_path = "/17_serialization/"
+    path = os.getcwd() + add_path
+    
+    draw_topology(transform_topology(path + "topology.yaml"), out_filename = path + "test.png")
+    #print(transform_topology(path + "topology.yaml"))

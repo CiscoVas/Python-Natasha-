@@ -33,66 +33,67 @@ In [11]: result = send_config_commands(r1, commands)
 
 In [12]: pprint(result)
 ({},
- {'logging': 'config term\n'
-             'Enter configuration commands, one per line.  End with CNTL/Z.\n'
-             'R1(config)#logging\n'
-             '% Incomplete command.\n'
-             '\n'
+ {'logging': 'config term
+'
+             'Enter configuration commands, one per line.  End with CNTL/Z.
+'
+             'R1(config)#logging
+'
+             '% Incomplete command.
+'
+             '
+'
              'R1(config)#',
-  'logging 0255.255.1': 'config term\n'
+  'logging 0255.255.1': 'config term
+'
                         'Enter configuration commands, one per line.  End with '
-                        'CNTL/Z.\n'
-                        'R1(config)#logging 0255.255.1\n'
-                        '                   ^\n'
-                        "% Invalid input detected at '^' marker.\n"
-                        '\n'
+                        'CNTL/Z.
+'
+                        'R1(config)#logging 0255.255.1
+'
+                        '                   ^
+'
+                        "% Invalid input detected at '^' marker.
+"
+                        '
+'
                         'R1(config)#'})
 
 """
+import re
+from netmiko import ConnectHandler
+import yaml
+
 
 # списки команд с ошибками и без:
-commands_with_errors = ["logging 0255.255.1", "logging", "a"]
+commands_with_errors = ["logging 0255.255.1", "logging", "i"]
 correct_commands = ["logging buffered 20010", "ip http server"]
-
 commands = commands_with_errors + correct_commands
-cont_ans = ""
 
-import yaml
-from netmiko import (
-    ConnectHandler,
-    NetmikoTimeoutException,
-    NetmikoAuthenticationException,
-)
 
 def send_config_commands(device, config_commands, log=True):
-    good = {}
-    bad = {}
-    exec_other = None
+    good_commands = {}
+    bad_commands = {}
+    regex = "% (?P<errmsg>.+)"
 
-    try:
-        with ConnectHandler(**device) as ssh:
-            if log == True:
-                print("Подключаюсь к " + device.get("host") + "...")
-            
-            ssh.enable()
-            for command in config_commands:
-                output = ssh.send_config_set(command)
-                if "% " in output:
-                    print("Команда " + command + " выполнилась с ошибкой " + output + " на устройстве " + device.get("host"))
-                    bad[command] = output
-
-                    if exec_other != True:
-                        cont_ans = input("Продолжать выполнять команды? [y]/n: ")
-                        if "n" in cont_ans.lower() or "no" in cont_ans.lower():
-                            break
-                        else:
-                            exec_other = True
-                else:
-                    good[command] = output
-    except (NetmikoTimeoutException, NetmikoAuthenticationException) as error:
-        print(error)
-
-    return good, bad
+    if log:
+        print("Подключаюсь к {}...".format(device["host"]))
+    with ConnectHandler(**device) as ssh:
+        ssh.enable()
+        for command in config_commands:
+            result = ssh.send_config_set(command, exit_config_mode=False)
+            error_in_result = re.search(regex, result)
+            if error_in_result:
+                message = 'Команда "{}" выполнилась с ошибкой "{}" на устройстве {}'
+                print(message.format(command, error_in_result.group("errmsg"), ssh.host))
+                bad_commands[command] = result
+                decision = input("Продолжать выполнять команды? [y]/n: ")
+                if decision.lower() in ("n", "no"):
+                    break
+            else:
+                good_commands[command] = result
+        ssh.exit_config_mode()
+    return good_commands, bad_commands
 
 
 if __name__ == "__main__":
@@ -101,4 +102,3 @@ if __name__ == "__main__":
 
     for dev in devices:
         print(send_config_commands(dev, commands))
-    

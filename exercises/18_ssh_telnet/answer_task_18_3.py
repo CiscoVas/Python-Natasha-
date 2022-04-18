@@ -44,35 +44,37 @@ Out[14]: '*17:06:12.278 UTC Wed Mar 13 2019'
 In [15]: commands = ['username user5 password pass5', 'username user6 password pass6']
 
 In [16]: send_commands(r1, config=commands)
-Out[16]: 'config term\nEnter configuration commands, one per line.  End with CNTL/Z.\nR1(config)#username user5 password pass5\nR1(config)#username user6 password pass6\nR1(config)#end\nR1#'
+Out[16]: 'config term
+Enter configuration commands, one per line.  End with CNTL/Z.
+R1(config)#username user5 password pass5
+R1(config)#username user6 password pass6
+R1(config)#end
+R1#'
 
 """
-
 import yaml
-import task_18_1 as show_module
-import task_18_2 as config_module
+from task_18_1 import send_show_command
+from task_18_2 import send_config_commands
 
 
 commands = ["logging 10.255.255.1", "logging buffered 20010", "no logging console"]
 command = "sh ip int br"
 
 
-def send_commands(dev, *, show = None, config = None):
-    if show != None and config != None:
-        raise ValueError('Use ONLY "show" or "config" key parammeter') 
-
-    if show:
-        return show_module.send_show_command(dev, show)
-    else:
-        return config_module.send_config_commands(dev, config)
+def send_commands(device, *, config=None, show=None):
+    if show and config:
+        raise ValueError("Можно передавать только один из аргументов show/config")
+    elif show:
+        return send_show_command(device, show)
+    elif config:
+        return send_config_commands(device, config)
 
 
 if __name__ == "__main__":
+    commands = ["logging 10.255.255.1", "logging buffered 20010", "no logging console"]
+    command = "sh ip int br"
     with open("devices.yaml") as f:
         devices = yaml.safe_load(f)
-
-    #print(send_commands(devices[0], 'sh clock', ["qwe", "qw1"]))
-    #print(send_commands(devices[0], show = 'sh clock', config = ["qwe", "qw1"]))
-    #print(send_commands(devices[0], 'sh clock'))
-    print(send_commands(devices[0], show='sh clock'))
-    print(send_commands(devices[0], config=commands))
+    r1 = devices[0]
+    print(send_commands(r1, config=commands))
+    print(send_commands(r1, show=command))

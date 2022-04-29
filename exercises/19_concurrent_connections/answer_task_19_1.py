@@ -23,36 +23,28 @@
 а затем запустить эту функцию в разных потоках для разных
 IP-адресов с помощью concurrent.futures (это надо сделать в функции ping_ip_addresses).
 """
-
 import subprocess
-import yaml
 from concurrent.futures import ThreadPoolExecutor
 
 
-def ping_ip_address(ip_addr):
-    ping_bool = subprocess.run(['ping', '-c', '2', '-n', ip_addr])
-    return ping_bool.returncode == 0
+def ping_ip(ip):
+    result = subprocess.run(["ping", "-c", "3", "-n", ip], stdout=subprocess.DEVNULL)
+    ip_is_reachable = result.returncode == 0
+    return ip_is_reachable
 
 
-def ping_ip_addresses(ip_list, limit = 3):
-    pos_list = []
-    neg_list = []
-
-    with ThreadPoolExecutor(max_workers = limit) as executor:
-        results = executor.map(ping_ip_address, ip_list)
-
-    for device, res in zip(ip_list, results):
-        if res:
-            pos_list.append(device)
+def ping_ip_addresses(ip_list, limit=3):
+    reachable = []
+    unreachable = []
+    with ThreadPoolExecutor(max_workers=limit) as executor:
+        results = executor.map(ping_ip, ip_list)
+    for ip, status in zip(ip_list, results):
+        if status:
+            reachable.append(ip)
         else:
-            neg_list.append(device)
-
-    return pos_list, neg_list
+            unreachable.append(ip)
+    return reachable, unreachable
 
 
 if __name__ == "__main__":
-    with open("devices.yaml") as f:
-        devices = yaml.safe_load(f)
-    
-    ip_addrs = [dev.get("host") for dev in devices]
-    print(ping_ip_addresses(ip_addrs, 3))
+    print(ping_ip_addresses(["8.8.8.8", "192.168.100.22", "192.168.100.1"]))

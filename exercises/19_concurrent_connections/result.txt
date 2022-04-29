@@ -1,0 +1,6 @@
+R1#sh clock
+*06:06:10.143 UTC Fri Apr 29 2022
+R2#sh clock
+*06:06:20.823 UTC Fri Apr 29 2022
+R3#sh clock
+*06:05:18.363 UTC Fri Apr 29 2022

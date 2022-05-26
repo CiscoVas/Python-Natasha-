@@ -18,18 +18,9 @@
 
 """
 
-import task_20_1 as config_gen
-import yaml
-
-
-if __name__ == '__main__':
-    with open('templates/cisco_router_base.txt', 'w') as wf:
-        wf.write("{% include 'cisco_base.txt' %}\n\n")
-        wf.write("{% include 'alias.txt' %}\n\n")
-        wf.write("{% include 'eem_int_desc.txt' %}")
-
-    with open('data_files/router_info.yml') as f:
-        dict = yaml.safe_load(f)
-
-    print(config_gen.generate_config('templates/cisco_router_base.txt', dict))
-    
+# templates/cisco_router_base.txt
+"""
+{% include 'cisco_base.txt' %}
+{% include 'alias.txt' %}
+{% include 'eem_int_desc.txt' %}
+"""

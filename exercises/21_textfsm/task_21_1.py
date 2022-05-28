@@ -16,7 +16,16 @@
 
 """
 from netmiko import ConnectHandler
+import textfsm
 
+
+def parse_command_output(template, command_output):
+    with open(template) as f_temp:
+        fsm = textfsm.TextFSM(f_temp)
+        result = fsm.ParseText(command_output)
+        # result.insert(0, fsm.header)
+
+    return [fsm.header] + result
 
 # вызов функции должен выглядеть так
 if __name__ == "__main__":
@@ -30,5 +39,6 @@ if __name__ == "__main__":
     with ConnectHandler(**r1_params) as r1:
         r1.enable()
         output = r1.send_command("sh ip int br")
+
     result = parse_command_output("templates/sh_ip_int_br.template", output)
     print(result)

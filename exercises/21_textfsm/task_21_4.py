@@ -21,3 +21,25 @@
 Проверить работу функции на примере вывода команды sh ip int br
 и устройствах из devices.yaml.
 """
+
+import yaml
+import task_21_3 as parse
+from textfsm import clitable
+from netmiko import ConnectHandler
+
+def send_and_parse_show_command(device_dict, command, templates_path, index = "index"):
+    with ConnectHandler(**device_dict) as ssh:
+        ssh.enable()
+        output = ssh.send_command(command)
+    
+    d_attr = {'Command': command, 'Vendor': device_dict['device_type']}
+
+    return parse.parse_command_dynamic(output, d_attr, index, templates_path) 
+
+
+if __name__ == "__main__":
+    with open("devices.yaml") as f:
+        devices = yaml.safe_load(f)
+    command = "sh ip int br"
+    
+    print(send_and_parse_show_command(devices[0], command, "templates"))

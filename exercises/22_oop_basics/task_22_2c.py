@@ -136,10 +136,10 @@ class CiscoTelnet:
         return result
 
 
-r1 = CiscoTelnet("192.168.100.1", "cisco", "cisco", "cisco")
-commands_with_errors = ['logging 0255.255.1', 'logging', 'a']
-correct_commands = ['logging buffered 20010', 'ip http server']
-commands = commands_with_errors+correct_commands
+# r1 = CiscoTelnet("192.168.100.1", "cisco", "cisco", "cisco")
+# commands_with_errors = ['logging 0255.255.1', 'logging', 'a']
+# correct_commands = ['logging buffered 20010', 'ip http server']
+# commands = commands_with_errors+correct_commands
     
 # print(r1.send_config_commands(commands_with_errors, strict=True))
-print(r1.send_config_commands(commands, strict=False))
+# print(r1.send_config_commands(commands, strict=False))

@@ -44,59 +44,57 @@ Out[4]:
   'protocol': 'up'}]
 
 In [5]: r1.send_show_command("sh ip int br", parse=False)
-Out[5]: 'sh ip int br\r\nInterface                  IP-Address      OK? Method Status
-Protocol\r\nEthernet0/0                192.168.100.1   YES NVRAM  up
-up      \r\nEthernet0/1                192.168.200.1   YES NVRAM  up...'
+Out[5]: 'sh ip int br
+Interface                  IP-Address      OK? Method Status
+Protocol
+Ethernet0/0                192.168.100.1   YES NVRAM  up
+up      
+Ethernet0/1                192.168.200.1   YES NVRAM  up...'
 
 
 """
+import time
 import telnetlib
+import yaml
 from textfsm import clitable
 
 
 class CiscoTelnet:
-    def to_bytes(self, line):
-        return f"{line}\n".encode("utf-8")
-    
-
     def __init__(self, ip, username, password, secret):
         self.telnet = telnetlib.Telnet(ip)
-        self.telnet.read_until(b"Username")
-        self.telnet.write(self.to_bytes(username))
-        
-        self.telnet.read_until(b'Password')
-        self.telnet.write(self.to_bytes(password))
-        
-        regex_idx, match, output = self.telnet.expect([b">", b"#"])
-        if regex_idx == 0 and match.group() == b'>':
-            self.telnet.write(self.to_bytes("enable"))
-            self.telnet.read_until(b"Password")
-            self.telnet.write(self.to_bytes(secret))
-            self.telnet.read_until(b"#", timeout=5)
+        self.telnet.read_until(b"Username:")
+        self._write_line(username)
+        self.telnet.read_until(b"Password:")
+        self._write_line(password)
+        self._write_line("enable")
+        self.telnet.read_until(b"Password:")
+        self._write_line(secret)
+        self._write_line("terminal length 0")
+        time.sleep(1)
+        self.telnet.read_very_eager()
+
+    def _write_line(self, line):
+        self.telnet.write(line.encode("ascii") + b"\n")
+
+    def send_show_command(self, command, parse=True, templates="templates", index="index"):
+        self._write_line(command)
+        time.sleep(1)
+        command_output = self.telnet.read_very_eager().decode("ascii")
+        if not parse:
+            return command_output
+        attributes = {"Command": command, "Vendor": "cisco_ios"}
+        cli = clitable.CliTable("index", templates)
+        cli.ParseCmd(command_output, attributes)
+        return [dict(zip(cli.header, row)) for row in cli]
 
 
-    def _write_line(self, input_str):
-        self.telnet.write(self.to_bytes(input_str))
-
-
-    def parse_to_list_dict(self, output, command, index_file="index", templ_path="templates"):
-        cli_table = clitable.CliTable(index_file, templ_path)
-        d_attr = {'Command': command, 'Vendor': 'cisco_ios'}
-        cli_table.ParseCmd(output, d_attr)
-        header = cli_table.header
-
-        return [dict(zip(header, line)) for line in cli_table]
-
-
-    def send_show_command(self, show, parse = True, templates = "templates", index = "index"):
-        self.telnet.write(self.to_bytes(show))
-        output = self.telnet.read_until(b"#", timeout=3).decode("utf-8")
-
-        if parse == True:
-            return self.parse_to_list_dict(output, show, index, templates)
-
-        return output
-
-if __name__ == "main":
-    r1 = CiscoTelnet("192.168.100.1", "cisco", "cisco", "cisco")
+if __name__ == "__main__":
+    r1_params = {
+        "ip": "192.168.100.1",
+        "username": "cisco",
+        "password": "cisco",
+        "secret": "cisco",
+    }
+    r1 = CiscoTelnet(**r1_params)
     print(r1.send_show_command("sh ip int br"))
+    print(r1.send_show_command("sh ip int br", parse=False))

@@ -35,12 +35,19 @@ In [3]: r1_params = {
 In [4]: r1 = CiscoTelnet(**r1_params)
 
 In [5]: r1.send_show_command("sh ip int br")
-Out[5]: 'sh ip int br\r\nInterface                  IP-Address      OK? Method Status                Protocol\r\nEthernet0/0                192.168.100.1   YES NVRAM  up                    up      \r\nEthernet0/1                192.168.200.1   YES NVRAM  up                    up      \r\nEthernet0/2                unassigned      YES manual up                    up      \r\nEthernet0/3                192.168.130.1   YES NVRAM  up                    up      \r\nR1#'
+Out[5]: 'sh ip int br
+Interface                  IP-Address      OK? Method Status                Protocol
+Ethernet0/0                192.168.100.1   YES NVRAM  up                    up      
+Ethernet0/1                192.168.200.1   YES NVRAM  up                    up      
+Ethernet0/2                unassigned      YES manual up                    up      
+Ethernet0/3                192.168.130.1   YES NVRAM  up                    up      
+R1#'
 
 
 Подсказка:
 Метод _write_line нужен для того чтобы можно было сократить строку:
-self.telnet.write(line.encode("ascii") + b"\n")
+self.telnet.write(line.encode("ascii") + b"
+")
 
 до такой:
 self._write_line(line)
@@ -48,45 +55,41 @@ self._write_line(line)
 Он не должен делать ничего другого.
 """
 
+import time
 import telnetlib
+import yaml
 
 
 class CiscoTelnet:
-    def to_bytes(self, line):
-        return f"{line}\n".encode("utf-8")
-    
-
     def __init__(self, ip, username, password, secret):
         self.telnet = telnetlib.Telnet(ip)
-        self.telnet.read_until(b"Username")
-        self.telnet.write(self.to_bytes(username))
-        
-        self.telnet.read_until(b'Password')
-        self.telnet.write(self.to_bytes(password))
-        
-        regex_idx, match, output = self.telnet.expect([b">", b"#"])
-        if regex_idx == 0 and match.group() == b'>':
-            self.telnet.write(self.to_bytes("enable"))
-            self.telnet.read_until(b"Password")
-            self.telnet.write(self.to_bytes(secret))
-            self.telnet.read_until(b"#", timeout=5)
+        self.telnet.read_until(b"Username:")
+        self._write_line(username)
+        self.telnet.read_until(b"Password:")
+        self._write_line(password)
+        self._write_line("enable")
+        self.telnet.read_until(b"Password:")
+        self._write_line(secret)
+        self._write_line("terminal length 0")
+        time.sleep(1)
+        self.telnet.read_very_eager()
+
+    def _write_line(self, line):
+        self.telnet.write(line.encode("ascii") + b"\n")
+
+    def send_show_command(self, command):
+        self._write_line(command)
+        time.sleep(1)
+        command_output = self.telnet.read_very_eager().decode("ascii")
+        return command_output
 
 
-    def _write_line(self, input_str):
-        self.telnet.write(self.to_bytes(input_str))
-
-
-    def send_show_command(self, show):
-        # self.telnet.write(b"terminal length 0\n")
-        # self.telnet.read_until(b"#", timeout=5)
-        # time.sleep(3)
-        # self.telnet.read_very_eager()
-        
-        self.telnet.write(self.to_bytes(show))
-        output = self.telnet.read_until(b"#", timeout=3).decode("utf-8")
-
-        return output
-
-if __name__ == "main":
-    r1 = CiscoTelnet("192.168.100.1", "cisco", "cisco", "cisco")
+if __name__ == "__main__":
+    r1_params = {
+        "ip": "192.168.100.1",
+        "username": "cisco",
+        "password": "cisco",
+        "secret": "cisco",
+    }
+    r1 = CiscoTelnet(**r1_params)
     print(r1.send_show_command("sh ip int br"))

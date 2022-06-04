@@ -27,3 +27,20 @@ device_params = {
     "password": "cisco",
     "secret": "cisco",
 }
+
+from base_connect_class import BaseSSH
+import yaml
+
+
+class CiscoSSH(BaseSSH):
+    def __init__(self, **device_params):
+        super().__init__(**device_params)
+        self.ssh.enable()
+    
+
+if __name__ == "__main__":
+    with open("devices.yaml") as f:
+        devices = yaml.safe_load(f)
+    
+    # print(devices[0])
+    cisco_ssh = CiscoSSH(**device_params)

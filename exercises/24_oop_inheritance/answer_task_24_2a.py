@@ -22,7 +22,14 @@ In [2]: from task_24_2a import MyNetmiko
 In [3]: r1 = MyNetmiko(**device_params)
 
 In [4]: r1.send_command('sh ip int br')
-Out[4]: 'Interface                  IP-Address      OK? Method Status                Protocol\nEthernet0/0                192.168.100.1   YES NVRAM  up                    up      \nEthernet0/1                192.168.200.1   YES NVRAM  up                    up      \nEthernet0/2                190.16.200.1    YES NVRAM  up                    up      \nEthernet0/3                192.168.230.1   YES NVRAM  up                    up      \nEthernet0/3.100            10.100.0.1      YES NVRAM  up                    up      \nEthernet0/3.200            10.200.0.1      YES NVRAM  up                    up      \nEthernet0/3.300            10.30.0.1       YES NVRAM  up                    up      '
+Out[4]: 'Interface                  IP-Address      OK? Method Status                Protocol
+Ethernet0/0                192.168.100.1   YES NVRAM  up                    up      
+Ethernet0/1                192.168.200.1   YES NVRAM  up                    up      
+Ethernet0/2                190.16.200.1    YES NVRAM  up                    up      
+Ethernet0/3                192.168.230.1   YES NVRAM  up                    up      
+Ethernet0/3.100            10.100.0.1      YES NVRAM  up                    up      
+Ethernet0/3.200            10.200.0.1      YES NVRAM  up                    up      
+Ethernet0/3.300            10.30.0.1       YES NVRAM  up                    up      '
 
 In [5]: r1.send_command('sh ip br')
 ---------------------------------------------------------------------------
@@ -34,46 +41,35 @@ ErrorInCommand: При выполнении команды "sh ip br" на ус�
 
 """
 from netmiko.cisco.cisco_ios import CiscoIosSSH
-
-
-device_params = {
-    "device_type": "cisco_ios",
-    "ip": "192.168.100.1",
-    "username": "cisco",
-    "password": "cisco",
-    "secret": "cisco",
-}
+import re
 
 
 class ErrorInCommand(Exception):
     """
-    Исключение генерируется, если при выполнении команды на оборудовании,
-    возникла ошибка.
+    Исключение генерируется, если при выполнении команды на оборудовании, возникла ошибка.
     """
 
 
 class MyNetmiko(CiscoIosSSH):
     def __init__(self, **device_params):
-        # self.ip = device_params["ip"]
         super().__init__(**device_params)
         self.enable()
 
-    def send_command(self, command):
-        output = super().send_command(command)
-        self._check_error_in_command(command, output)
-        return output
+    def _check_error_in_command(self, command, result):
+        regex = "% (?P<err>.+)"
+        message = (
+            'При выполнении команды "{cmd}" на устройстве {device} '
+            'возникла ошибка "{error}"'
+        )
+        error_in_cmd = re.search(regex, result)
+        if error_in_cmd:
+            raise ErrorInCommand(
+                message.format(
+                    cmd=command, device=self.host, error=error_in_cmd.group("err")
+                )
+            )
 
-    def _check_error_in_command(self, command, command_output):
-        if "% " in command_output:
-            temp_lines = command_output.split("\n")
-            for line in temp_lines:
-                if "% " in line:
-                    err_line = f'При выполнении команды "{command}" на устройстве {self.host} возникла ошибка -> {line}'
-                    raise ErrorInCommand(err_line)
-        return 
-
-if __name__ == "__main__":
-    r1 = MyNetmiko(**device_params)
-    print(r1.send_command('sh ip int br'))
-    print("*" * 75)
-    print(r1.send_command('sh ip br'))
+    def send_command(self, command, *args, **kwargs):
+        command_output = super().send_command(command, *args, **kwargs)
+        self._check_error_in_command(command, command_output)
+        return command_output

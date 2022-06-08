@@ -10,25 +10,6 @@
 2. add_data.py
 
 
-1 скрипт create_db.py - в этот скрипт должна быть вынесена функциональность по созданию БД:
-* должна выполняться проверка наличия файла БД
-* если файла нет, согласно описанию схемы БД в файле dhcp_snooping_schema.sql,
-  должна быть создана БД
-* имя файла бд - dhcp_snooping.db
-
-В БД должно быть две таблицы (схема описана в файле dhcp_snooping_schema.sql):
- * switches - в ней находятся данные о коммутаторах
- * dhcp - тут хранится информация полученная из вывода sh ip dhcp snooping binding
-
-Пример выполнения скрипта, когда файла dhcp_snooping.db нет:
-$ python create_db.py
-Создаю базу данных...
-
-После создания файла:
-$ python create_db.py
-База данных существует
-
-
 2 скрипт add_data.py - с помощью этого скрипта, выполняется добавление данных в БД.
 Скрипт должен добавлять данные из вывода sh ip dhcp snooping binding
 и информацию о коммутаторах
@@ -81,29 +62,95 @@ $ python add_data.py
 Часть кода может быть глобальной.
 
 '''
-# new_db.db> create table switch (mac text not NULL primary key, hostname text, model text, location text);
-# new_db.db> .schema switch
+import os
+import re
+import yaml
+import sqlite3
+from tabulate import tabulate
 
-# new_db.db> INSERT into switch values ('0010.A1AA.C1CC', 'sw1', 'Cisco 3750', 'London, Green Str');
-# new_db.db> INSERT into switch (mac, model, location, hostname) values ('0020.A2AA.C2CC', 'Cisco 3850', 'London, Green Str', 'sw2');
 
-# Load commands from file
-# source add_rows_to_testdb.txt
+def get_dhcp_list_from_text(output, device_name):
+    regex = re.compile(
+        r"\n(?P<mac>\w\w(?::\w\w){5}) +(?P<ip>\d+.\d+.\d+.\d+) +\d+ "
+        r"+dhcp-snooping +(?P<vlan>\d+) +(?P<intf>\S+)"
+    )
+    # result_list = []
+    # for match in regex.finditer(output):
+    #     mac, ip, vlan, intf = match.group("mac", "ip", "vlan", "intf")
+    #     result_list.append(match.groups() + (device_name, ))
+    # return result_list
+    return [match.groups() + (device_name, ) for match in regex.finditer(output)]
 
-# ADD column mngmt_ip (type text)
-# ALTER table switch ADD COLUMN mngmt_ip text;
 
-# UPDATE table_name set mngmt_ip = '10.255.1.1' WHERE hostname = 'sw1';
+def fill_swithces_table(switches_yaml_path):
+    with open(switches_yaml_path) as f:
+        switches_d = yaml.safe_load(f)['switches']
+        
+    query = "INSERT into switches values (?, ?)"
+    connection = sqlite3.connect(db_name)
+    cursor = connection.cursor()
+    print("Добавляю данные в таблицу switches...")
+    for row in switches_d.items():
+        try:
+            cursor.execute(query, row)
+        except sqlite3.IntegrityError as err:
+            print(f"При добавлении данных: {row} Возникла ошибка: {err}")
+        
+    connection.commit()
 
-# If row ID exist it will be deleted and new row created
-# REPLACE INTO switch VALUES ('0030.A3AA.C1CC', 'sw3', 'Cisco 3850', 'London, Green Str', '10.255.1.3', 255);
 
-# ORDER BY 
-# SELECT * from switch ORDER BY hostname ASC(or DESC --- descending);
+def fil_dhcp_table(file_path):
+    output = ""
+    full_list = []
+    for file in file_path:
+        device_name = file[:file.find("_dhcp"):]
+        output = get_text_from_file(file)
+        full_list.extend(get_dhcp_list_from_text(output, device_name))
+    
+    query = "INSERT into dhcp values (?, ?, ?, ?, ?)"
+    connection = sqlite3.connect(db_name)
+    cursor = connection.cursor()
+    for row in full_list:
+        try:
+            cursor.execute(query, row)
+        except sqlite3.IntegrityError as err:
+            print(f"При добавлении данных: {row} Возникла ошибка: {err}")
+        
+    connection.commit()
+    
 
-# AND | OR | IN | NOT | 
-# select * from switch where model = 'Cisco 3850' and mngmt_ip LIKE '10.255.%';
-# select * from switch where model LIKE '%3750' or model LIKE '%3850';
-# select * from switch where model in ('Cisco 3750', 'C3750');
-# select * from switch where model not in ('Cisco 3750', 'C3750');
+def get_text_from_file(file_path):
+    with open(file_path) as f:
+        script = f.read()
+    return script
 
+
+db_name = "dhcp_snooping.db"
+
+if os.path.isfile(db_name):
+    print("База данных существует!")
+    fill_swithces_table("switches.yml")
+    fil_dhcp_table(["sw1_dhcp_snooping.txt", "sw2_dhcp_snooping.txt", "sw3_dhcp_snooping.txt"])
+else:
+    print("База данных не существует. Перед добавлением данных, ее надо создать")
+
+
+
+
+
+
+
+
+if __name__ == "__main__":
+    connection = sqlite3.connect(db_name)
+    cursor = connection.cursor()
+
+    cursor.execute('select * from switches')
+    print('select * from switches:')
+    print(cursor.fetchall())
+    print("*" * 75)
+
+    cursor.execute('select * from dhcp')
+    print('select * from dhcp:')
+    print(tabulate(cursor.fetchall()))
+    pass
